@@ -1049,8 +1049,10 @@ function initReportModule(key){
       const filename = `Rapport_${CATEGORY_LABELS[key]}_${clientName}${dateName ? '_'+dateName : ''}_FF_CLIM.pdf`;
       const pdfBlob = doc.output('blob');
       downloadBytes(pdfBlob, filename);
-            logHistoryEntry(key, val('f_titre'), val('f_client'), pdfBlob, filename);
-      resetForm();
+                  logHistoryEntry(key, val('f_titre'), val('f_client'), pdfBlob, filename);
+      if(confirm('PDF téléchargé ✓\n\nVoulez-vous vider le formulaire pour une nouvelle saisie ?')){
+        resetForm();
+      }
       statusMsg.textContent = 'PDF téléchargé ✓';
       setTimeout(()=>{ statusMsg.textContent=''; }, 3000);
     } catch(err){
@@ -1428,9 +1430,11 @@ async function generateCerfaPDF(){
 
         const ficheNo = (v('cerfa_Fiche_no') || 'sans_numero').replace(/[^a-z0-9]+/gi,'_');
     const filename = `CERFA_15497_${ficheNo}.pdf`;
-        downloadBytes(outBytes, filename);
+            downloadBytes(outBytes, filename);
     logHistoryEntry('cerfa', 'CERFA 15497*04', v('cerfa_Detenteur') || v('cerfa_Operateur') || '', new Blob([outBytes], {type:'application/pdf'}), filename);
-    resetCerfaForm();
+    if(confirm('PDF téléchargé ✓\n\nVoulez-vous vider le formulaire pour une nouvelle saisie ?')){
+      resetCerfaForm();
+    }
     statusMsg.textContent = 'PDF téléchargé ✓';
     setTimeout(()=>{ statusMsg.textContent=''; }, 3000);
   } catch(err){
