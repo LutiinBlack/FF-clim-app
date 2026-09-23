@@ -825,16 +825,51 @@ function initReportModule(key){
   $('addPhotoBtn').onclick = () => addPhotoRow();
   addPhotoRow();
 
+ 
+  /* ---- draft (auto-save) ---- */
+  function draftKey(){ return 'ffclim_draft_' + key; }
+  function saveDraft(){
+    const data = {
+      f_titre: $('f_titre').value, f_client: $('f_client').value, f_adresse: $('f_adresse').value,
+      f_date: $('f_date').value, f_intervenant: $('f_intervenant').value, f_objet: $('f_objet').value,
+      s1_titre: $('s1_titre').value, s1_texte: $('s1_texte').value, s1_preco: $('s1_preco').value,
+      s2_titre: $('s2_titre').value, s2_texte: $('s2_texte').value, s2_preco: $('s2_preco').value,
+      f_conclusion: $('f_conclusion').value,
+      bullets: [...container.querySelectorAll('.bullet-input')].map(i => i.value),
+    };
+    try{ localStorage.setItem(draftKey(), JSON.stringify(data)); } catch(e){}
+  }
+  function clearDraft(){
+    try{ localStorage.removeItem(draftKey()); } catch(e){}
+  }
+  function loadDraft(){
+    let data = null;
+    try{ const raw = localStorage.getItem(draftKey()); if(raw) data = JSON.parse(raw); } catch(e){}
+    if(!data) return;
+    ['f_titre','f_client','f_adresse','f_date','f_intervenant','f_objet','s1_titre','s1_texte','s1_preco','s2_titre','s2_texte','s2_preco','f_conclusion'].forEach(id => {
+      if(data[id] !== undefined) $(id).value = data[id];
+    });
+    if(Array.isArray(data.bullets) && data.bullets.length){
+      bulletsList.innerHTML = '';
+      data.bullets.forEach(b => addBulletRow(b));
+    }
+  }
+  loadDraft();
+
   /* ---- clear all ---- */
-  function clearAll(){
-    if(!confirm('Effacer toute la saisie de ce formulaire ? Cette action est irréversible.')) return;
+  function resetForm(){
     ['f_titre','f_client','f_adresse','f_date','f_intervenant','f_objet','s1_titre','s1_texte','s1_preco','s2_titre','s2_texte','s2_preco','f_conclusion'].forEach(id => { $(id).value = ''; });
     bulletsList.innerHTML = '';
     addBulletRow(); addBulletRow();
     photosList.innerHTML = '';
     photoSeq = 0;
     addPhotoRow();
+    clearDraft();
     updatePreview();
+  }
+  function clearAll(){
+    if(!confirm('Effacer toute la saisie de ce formulaire ? Cette action est irréversible.')) return;
+    resetForm();
   }
   $('clearBtn').addEventListener('click', clearAll);
 
@@ -871,9 +906,10 @@ function initReportModule(key){
         block.innerHTML = `<img src="${card.dataset.dataUrl}"><div class="cap">${esc(caption)}</div>`;
         pv_photos.appendChild(block);
       });
-    } else {
+      } else {
       pv_photos_page.style.display = 'none';
     }
+    saveDraft();
   }
   ['f_titre','f_client','f_adresse','f_date','f_intervenant','f_objet','s1_titre','s1_texte','s2_titre','s2_texte','f_conclusion'].forEach(id=>{
     $(id).addEventListener('input', updatePreview);
@@ -1013,7 +1049,8 @@ function initReportModule(key){
       const filename = `Rapport_${CATEGORY_LABELS[key]}_${clientName}${dateName ? '_'+dateName : ''}_FF_CLIM.pdf`;
       const pdfBlob = doc.output('blob');
       downloadBytes(pdfBlob, filename);
-      logHistoryEntry(key, val('f_titre'), val('f_client'), pdfBlob, filename);
+            logHistoryEntry(key, val('f_titre'), val('f_client'), pdfBlob, filename);
+      resetForm();
       statusMsg.textContent = 'PDF téléchargé ✓';
       setTimeout(()=>{ statusMsg.textContent=''; }, 3000);
     } catch(err){
@@ -1220,12 +1257,41 @@ function cerfaScreenTemplate(){
   `;
 }
 document.getElementById('screen-cerfa').innerHTML = cerfaScreenTemplate();
-document.getElementById('cerfaClearBtn').addEventListener('click', () => {
-  if(!confirm('Effacer toute la saisie de ce formulaire ? Cette action est irréversible.')) return;
+
+function saveCerfaDraft(){
+  const data = { text: {}, checks: {}, radios: {} };
+  document.querySelectorAll('#screen-cerfa input[type=text], #screen-cerfa input[type=email], #screen-cerfa input[type=date], #screen-cerfa textarea, #screen-cerfa select').forEach(el => { data.text[el.id] = el.value; });
+  document.querySelectorAll('#screen-cerfa input[type=checkbox]').forEach(el => { data.checks[el.id] = el.checked; });
+  document.querySelectorAll('#screen-cerfa input[type=radio]').forEach(el => { if(el.checked) data.radios[el.name] = el.value; });
+  try{ localStorage.setItem('ffclim_draft_cerfa', JSON.stringify(data)); } catch(e){}
+}
+function loadCerfaDraft(){
+  let data = null;
+  try{ const raw = localStorage.getItem('ffclim_draft_cerfa'); if(raw) data = JSON.parse(raw); } catch(e){}
+  if(!data) return;
+  Object.keys(data.text || {}).forEach(id => { const el = document.getElementById(id); if(el) el.value = data.text[id]; });
+  Object.keys(data.checks || {}).forEach(id => { const el = document.getElementById(id); if(el) el.checked = data.checks[id]; });
+  Object.keys(data.radios || {}).forEach(name => {
+    const el = document.querySelector(`input[name="${name}"][value="${data.radios[name]}"]`);
+    if(el) el.checked = true;
+  });
+}
+function clearCerfaDraft(){
+  try{ localStorage.removeItem('ffclim_draft_cerfa'); } catch(e){}
+}
+function resetCerfaForm(){
   document.querySelectorAll('#screen-cerfa input[type=text], #screen-cerfa input[type=email], #screen-cerfa input[type=date], #screen-cerfa textarea, #screen-cerfa select').forEach(el => { el.value = ''; });
   document.querySelectorAll('#screen-cerfa input[type=checkbox]').forEach(el => { el.checked = false; });
   document.querySelectorAll('#screen-cerfa input[type=radio]').forEach(el => { el.checked = false; });
+  clearCerfaDraft();
+}
+document.getElementById('cerfaClearBtn').addEventListener('click', () => {
+  if(!confirm('Effacer toute la saisie de ce formulaire ? Cette action est irréversible.')) return;
+  resetCerfaForm();
 });
+document.getElementById('screen-cerfa').addEventListener('input', saveCerfaDraft);
+document.getElementById('screen-cerfa').addEventListener('change', saveCerfaDraft);
+loadCerfaDraft();
 
 function base64ToBytes(base64){
   const binary = atob(base64);
@@ -1362,8 +1428,9 @@ async function generateCerfaPDF(){
 
         const ficheNo = (v('cerfa_Fiche_no') || 'sans_numero').replace(/[^a-z0-9]+/gi,'_');
     const filename = `CERFA_15497_${ficheNo}.pdf`;
-    downloadBytes(outBytes, filename);
+        downloadBytes(outBytes, filename);
     logHistoryEntry('cerfa', 'CERFA 15497*04', v('cerfa_Detenteur') || v('cerfa_Operateur') || '', new Blob([outBytes], {type:'application/pdf'}), filename);
+    resetCerfaForm();
     statusMsg.textContent = 'PDF téléchargé ✓';
     setTimeout(()=>{ statusMsg.textContent=''; }, 3000);
   } catch(err){
