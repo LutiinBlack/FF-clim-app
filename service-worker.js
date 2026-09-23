@@ -1,4 +1,4 @@
-const CACHE_NAME = "ffclim-rapports-v3";
+const CACHE_NAME = "ffclim-rapports-v4";
 const CORE_ASSETS = [
   "./index.html",
   "./manifest.json",
