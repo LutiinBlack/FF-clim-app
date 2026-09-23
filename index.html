@@ -339,6 +339,17 @@
     font-size:13px; font-weight:600; padding:9px 13px; cursor:pointer; flex-shrink:0;
   }
 
+  .update-banner{
+    position:fixed; top:0; left:0; right:0; z-index:50;
+    background:var(--cyan); color:#04283A; padding:10px 16px;
+    display:flex; align-items:center; justify-content:center; gap:14px;
+    font-size:13px; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.15);
+  }
+  .update-banner button{
+    background:var(--navy); color:#fff; border:none; border-radius:6px;
+    padding:6px 12px; font-size:12.5px; font-weight:700; cursor:pointer;
+  }
+
   ::placeholder{color:#A7ABC4;}
 </style>
 </head>
@@ -1730,10 +1741,31 @@ async function loadHistory(){
 
    checkExistingSession();
 
-/* ---------------- PWA: service worker registration ---------------- */
+/* ---------------- PWA: service worker registration + update detection ---------------- */
+function showUpdateBanner(){
+  if(document.getElementById('updateBanner')) return;
+  const bar = document.createElement('div');
+  bar.id = 'updateBanner';
+  bar.className = 'update-banner';
+  bar.innerHTML = `<span>Nouvelle version disponible</span><button id="updateReloadBtn">Recharger</button>`;
+  document.body.appendChild(bar);
+  document.getElementById('updateReloadBtn').addEventListener('click', () => window.location.reload());
+}
+
 if ('serviceWorker' in navigator) {
+  let hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if(hadController) showUpdateBanner();
+    hadController = true;
+  });
+
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+    navigator.serviceWorker.register('service-worker.js').then((reg) => {
+      reg.update();
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') reg.update();
+      });
+    }).catch(() => {});
   });
 }
 
