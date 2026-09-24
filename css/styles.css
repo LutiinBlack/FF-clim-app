@@ -1,0 +1,421 @@
+/* ==================================================================
+   FF CLIM — Feuille de styles
+   ==================================================================
+   Toute l'apparence visuelle de l'application vit dans ce fichier.
+   Le HTML (index.html) ne contient donc plus aucun style en ligne
+   pour la mise en page générale : il pose juste la structure, et
+   CSS décide des couleurs, tailles, espacements, etc.
+
+   Organisation du fichier (recherchez ces titres avec Ctrl+F) :
+     1. Variables globales (:root)
+     2. Réglages de base (body, titres...)
+     3. Barre du haut (topbar)
+     4. Écrans (.screen) et page d'accueil
+     5. Mise en page des écrans de rapport (formulaire + aperçu)
+     6. Cartes / champs de formulaire génériques
+     7. Liste à puces ("Synthèse des travaux à prévoir")
+     8. Photos
+     9. Aperçu "papier" (rendu façon PDF à l'écran)
+    10. Formulaire CERFA (accordéons)
+    11. Barre du bas (bouton Télécharger le PDF)
+    12. Écran de connexion
+    13. Panneau d'administration
+    14. Historique
+    15. Bandeau de mise à jour PWA
+   ================================================================== */
+
+
+/* ------------------------------------------------------------------
+   1. VARIABLES GLOBALES
+   ------------------------------------------------------------------
+   ":root" définit des "variables CSS" (custom properties), réutilisées
+   partout dans ce fichier via var(--nom). Un seul endroit à modifier
+   pour changer une couleur dans toute l'application.
+   ------------------------------------------------------------------ */
+:root{
+  --navy: #23267E;        /* bleu marine principal (barre du haut, boutons) */
+  --navy-deep: #171A5C;   /* bleu marine plus foncé (survol, titres) */
+  --cyan: #00AEEA;        /* cyan de la marque FF CLIM (accents, actif) */
+  --cyan-soft: #E4F7FD;   /* cyan très clair (fonds discrets) */
+  --paper: #FFFFFF;       /* blanc "papier" des cartes */
+  --canvas: #EEF1FB;      /* fond général de l'application */
+  --ink: #1B1E30;         /* couleur de texte principale (presque noir) */
+  --ink-soft: #5B5F78;    /* texte secondaire (labels, aide) */
+  --line: #DADEEF;        /* couleur des bordures / séparateurs */
+  --danger: #C4432B;      /* rouge pour les actions destructrices */
+  --radius: 10px;         /* arrondi standard des cartes */
+  --shadow: 0 1px 2px rgba(23,26,92,0.06), 0 8px 24px rgba(23,26,92,0.07);
+}
+
+/* ------------------------------------------------------------------
+   2. RÉGLAGES DE BASE
+   ------------------------------------------------------------------ */
+*{box-sizing:border-box;} /* padding/bordures inclus dans la largeur — évite les surprises de mise en page */
+html,body{margin:0;padding:0;}
+body{
+  background:var(--canvas);
+  color:var(--ink);
+  font-family:'Inter',sans-serif;      /* police "texte" (voir <link> Google Fonts dans index.html) */
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:24px;
+}
+/* Quand une barre de téléchargement est affichée en bas (écrans de rapport),
+   on ajoute de la place en bas pour qu'elle ne cache pas le contenu. */
+body.has-bottombar{padding-bottom:88px;}
+h1,h2,h3,.brand{font-family:'Space Grotesk',sans-serif;} /* police "titres", plus distinctive */
+button{font-family:inherit;}
+
+/* ------------------------------------------------------------------
+   3. BARRE DU HAUT (topbar)
+   ------------------------------------------------------------------ */
+.topbar{
+  display:flex; align-items:center; gap:12px;
+  padding:14px 20px;
+  background:var(--navy);
+  color:#fff;
+  position:sticky; top:0; z-index:20; /* reste visible au défilement */
+}
+.topbar img.logo-img{width:34px; height:34px; border-radius:50%; display:block; flex-shrink:0;}
+.back-btn{
+  background:rgba(255,255,255,0.12); border:none; color:#fff; width:32px; height:32px;
+  border-radius:50%; font-size:17px; cursor:pointer; flex-shrink:0; display:flex;
+  align-items:center; justify-content:center;
+}
+.topbar .brand{font-size:15px; font-weight:700; letter-spacing:0.2px; line-height:1.15;}
+.topbar .brand small{display:block; font-weight:400; font-size:11px; color:#B9C1F0; font-family:'Inter',sans-serif;}
+.topbar .tabs{margin-left:auto; display:flex; gap:4px; background:rgba(255,255,255,0.1); padding:4px; border-radius:999px;}
+.topbar .tabs button{
+  border:none; background:transparent; color:#CDD3F5;
+  font-family:'Inter',sans-serif; font-size:13px; font-weight:600;
+  padding:7px 14px; border-radius:999px; cursor:pointer;
+}
+.topbar .tabs button.active{background:var(--cyan); color:#04283A;}
+.install-btn{
+  display:none; align-items:center; gap:6px; margin-left:10px;
+  background:var(--cyan); color:#04283A; border:none; border-radius:999px;
+  font-family:'Inter',sans-serif; font-weight:700; font-size:12.5px;
+  padding:7px 13px; cursor:pointer; white-space:nowrap; flex-shrink:0;
+}
+.logout-btn{
+  display:none; align-items:center; justify-content:center; margin-left:8px;
+  background:rgba(255,255,255,0.12); border:none; color:#fff; width:32px; height:32px;
+  border-radius:50%; font-size:15px; cursor:pointer; flex-shrink:0;
+}
+
+/* ------------------------------------------------------------------
+   4. ÉCRANS (.screen) ET PAGE D'ACCUEIL
+   ------------------------------------------------------------------
+   Chaque "page" de l'application (accueil, un rapport, l'admin...)
+   est une <div class="screen"> superposée aux autres. JS bascule
+   entre elles en ajoutant/retirant la classe "active" (voir
+   js/navigation.js → showScreen()). Une seule est visible à la fois.
+   ------------------------------------------------------------------ */
+.screen{display:none;}
+.screen.active{display:block;}
+
+.home-wrap{max-width:900px; margin:0 auto; padding:22px 18px 10px;}
+.home-hero{margin-bottom:18px;}
+.home-hero h1{font-size:19px; margin:0 0 4px; color:var(--navy-deep);}
+.home-hero p{font-size:13px; color:var(--ink-soft); margin:0;}
+/* Grille des catégories : 2 colonnes sur mobile, 3 à partir de 640px */
+.cat-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+@media(min-width:640px){ .cat-grid{grid-template-columns:1fr 1fr 1fr;} }
+.cat-card{
+  background:var(--paper); border:1px solid var(--line); border-radius:14px;
+  padding:18px 14px; text-align:left; cursor:pointer; box-shadow:var(--shadow);
+  display:flex; flex-direction:column; gap:10px; min-height:130px;
+}
+.cat-card:active{transform:scale(0.98);} /* petit effet "pressé" au clic */
+.cat-card .cat-icon{
+  width:38px; height:38px; border-radius:10px; background:var(--cyan-soft); color:var(--navy);
+  display:flex; align-items:center; justify-content:center;
+}
+.cat-card .cat-icon svg{width:20px; height:20px;}
+.cat-card .cat-label{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14.5px; color:var(--ink);}
+.cat-card .cat-desc{font-size:11.5px; color:var(--ink-soft); line-height:1.4;}
+/* Variante mise en avant pour la carte CERFA (fond bleu marine plein) */
+.cat-card.cerfa{background:var(--navy); border-color:var(--navy);}
+.cat-card.cerfa .cat-icon{background:rgba(255,255,255,0.15); color:#fff;}
+.cat-card.cerfa .cat-label{color:#fff;}
+.cat-card.cerfa .cat-desc{color:#B9C1F0;}
+
+/* ------------------------------------------------------------------
+   5. MISE EN PAGE DES ÉCRANS DE RAPPORT (formulaire + aperçu)
+   ------------------------------------------------------------------
+   Sur mobile : le formulaire et l'aperçu sont deux "onglets" empilés
+   (boutons Rédiger/Aperçu en haut). Sur grand écran (≥980px), les
+   deux colonnes s'affichent côte à côte en permanence.
+   ------------------------------------------------------------------ */
+.wrap{
+  max-width:1180px; margin:0 auto; padding:22px 18px 0;
+  display:grid; grid-template-columns: 1fr; gap:20px;
+}
+@media(min-width: 980px){
+  .wrap{grid-template-columns: minmax(0,1fr) 400px; align-items:start;}
+  .local-tabs{display:none;}          /* plus besoin des onglets : les 2 colonnes sont visibles */
+  .panel{display:block !important;}
+}
+.local-tabs{
+  display:flex; gap:4px; background:#fff; border:1px solid var(--line); padding:4px; border-radius:999px;
+  max-width:280px; margin:0 auto 16px;
+}
+.local-tabs button{
+  flex:1; border:none; background:transparent; color:var(--ink-soft);
+  font-weight:600; font-size:13px; padding:8px 10px; border-radius:999px; cursor:pointer;
+}
+.local-tabs button.active{background:var(--navy); color:#fff;}
+
+.panel{background:transparent;}
+.panel.form-panel{display:block;}
+.panel.preview-panel{display:none;}
+@media(min-width: 980px){ .panel.preview-panel{display:block; position:sticky; top:80px;} }
+
+/* ------------------------------------------------------------------
+   6. CARTES / CHAMPS DE FORMULAIRE GÉNÉRIQUES
+   ------------------------------------------------------------------ */
+.card{
+  background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+  padding:18px; margin-bottom:16px; box-shadow:var(--shadow);
+}
+.card h2{
+  font-size:14px; margin:0 0 14px; color:var(--navy-deep);
+  display:flex; align-items:center; gap:9px; font-weight:700;
+}
+.card h2 .num{
+  width:20px; height:20px; border-radius:5px; background:var(--cyan-soft); color:var(--navy);
+  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700;
+  font-family:'Inter',sans-serif; flex-shrink:0;
+}
+.field{margin-bottom:12px;}
+.field:last-child{margin-bottom:0;}
+.field label{
+  display:block; font-size:12px; font-weight:600; color:var(--ink-soft);
+  margin-bottom:5px;
+}
+.field input, .field textarea, .field select{
+  width:100%; border:1px solid var(--line); border-radius:7px;
+  padding:9px 11px; font-family:'Inter',sans-serif; font-size:13.5px; color:var(--ink);
+  background:#FCFDFF;
+}
+.field input:focus, .field textarea:focus, .field select:focus{
+  outline:none; border-color:var(--cyan); background:#fff;
+  box-shadow:0 0 0 3px rgba(0,174,234,0.15);
+}
+.field textarea{resize:vertical; min-height:64px; line-height:1.45;}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+.grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
+@media(max-width:480px){.grid2{grid-template-columns:1fr;} .grid3{grid-template-columns:1fr;}}
+
+.subgroup{border-top:1px dashed var(--line); padding-top:14px; margin-top:14px;}
+.subgroup:first-of-type{border-top:none; padding-top:0; margin-top:0;}
+.subgroup-title{font-size:12.5px; font-weight:700; color:var(--navy); margin-bottom:10px;}
+
+/* ------------------------------------------------------------------
+   7. LISTE À PUCES ("Synthèse des travaux à prévoir")
+   ------------------------------------------------------------------ */
+.bullet-row{display:flex; gap:8px; margin-bottom:8px; align-items:flex-start;}
+.bullet-row input{flex:1;}
+.icon-btn{
+  border:none; background:var(--cyan-soft); color:var(--navy); width:32px; height:32px;
+  border-radius:7px; cursor:pointer; font-size:16px; flex-shrink:0; line-height:1;
+}
+.icon-btn.remove{background:#FBEAE6; color:var(--danger);}
+.add-btn{
+  border:1.5px dashed var(--line); background:transparent; color:var(--navy);
+  font-family:'Inter',sans-serif; font-weight:600; font-size:13px;
+  padding:9px 14px; border-radius:7px; cursor:pointer; width:100%; margin-top:2px;
+}
+.add-btn:hover{border-color:var(--cyan); background:var(--cyan-soft);}
+
+/* ------------------------------------------------------------------
+   8. PHOTOS
+   ------------------------------------------------------------------ */
+.photo-card{
+  border:1px solid var(--line); border-radius:9px; padding:12px; margin-bottom:10px;
+  display:grid; grid-template-columns:72px 1fr auto; gap:12px; align-items:center;
+}
+.photo-thumb{
+  width:72px; height:72px; border-radius:7px; object-fit:cover; background:var(--canvas);
+  border:1px solid var(--line);
+}
+.photo-thumb.empty{display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-size:10px; text-align:center;}
+.photo-meta input[type=file]{font-size:11.5px; margin-bottom:6px; width:100%;}
+.photo-meta input[type=text]{width:100%;}
+
+/* ------------------------------------------------------------------
+   9. APERÇU "PAPIER" (rendu façon PDF affiché à l'écran)
+   ------------------------------------------------------------------
+   ".paper" imite visuellement une page du PDF final, pour que
+   l'utilisateur voie à quoi ressemblera son rapport avant de le
+   télécharger (voir js/reports.js → updatePreview()).
+   ------------------------------------------------------------------ */
+.preview-scroll{max-height: calc(100vh - 130px); overflow-y:auto; padding-right:2px;}
+.paper{
+  background:#fff; border:1px solid var(--line); border-radius:8px;
+  box-shadow:var(--shadow); padding:22px 20px 16px; position:relative;
+  margin-bottom:16px;
+}
+.paper .logo{
+  width:26%; aspect-ratio:1; border-radius:50%; display:block; margin:0 auto 10px;
+  object-fit:cover;
+}
+.paper .overline{text-align:center; font-size:8px; font-weight:700; letter-spacing:1px; color:var(--cyan); margin-bottom:2px;}
+.paper h3{
+  text-align:center; font-size:15px; margin:0 0 3px; color:var(--ink); letter-spacing:0.2px;
+}
+.paper .sub{text-align:center; font-size:9.5px; font-weight:700; color:var(--navy); margin-bottom:10px;}
+.paper table{width:100%; border-collapse:collapse; font-size:7px; margin-bottom:10px;}
+.paper table td{border:1px solid var(--line); padding:4px 6px;}
+.paper table td:first-child{background:var(--cyan-soft); color:var(--navy); font-weight:700; width:32%;}
+.paper .sec-title{font-size:8px; font-weight:700; color:var(--navy); margin:9px 0 3px;}
+.paper .sec-body{font-size:6.6px; line-height:1.5; color:#333; white-space:pre-wrap;}
+.paper .conclusion{font-size:6.6px; line-height:1.5; color:#333; font-weight:700; margin-top:9px;}
+.paper .foot{
+  margin-top:16px; font-size:6px; color:#999;
+  border-top:1px solid var(--line); padding-top:5px; display:flex; justify-content:space-between;
+}
+.paper.photos-page h3{margin-bottom:14px;}
+.preview-label{font-size:12px; font-weight:700; color:var(--ink-soft); margin-bottom:8px; text-align:center;}
+.pv-photo-block{margin-bottom:14px;}
+.pv-photo-block img{width:100%; max-height:170px; object-fit:contain; display:block; border-radius:5px; background:var(--canvas); border:1px solid var(--line);}
+.pv-photo-block .cap{text-align:center; font-size:7px; font-style:italic; color:#888; margin-top:4px;}
+
+/* ------------------------------------------------------------------
+   10. FORMULAIRE CERFA (accordéons)
+   ------------------------------------------------------------------
+   Chaque section du CERFA est un élément HTML natif <details>/<summary>,
+   ce qui donne l'accordéon (ouvrir/fermer) gratuitement, sans JS.
+   Le triangle "▾" (.chev) tourne à 180° via une transition CSS quand
+   la section est ouverte (sélecteur [open]).
+   ------------------------------------------------------------------ */
+.cerfa-wrap{max-width:760px; margin:0 auto; padding:20px 18px 100px;}
+.cerfa-intro{font-size:12.5px; color:var(--ink-soft); background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:16px; line-height:1.5;}
+.cerfa-intro b{color:var(--navy-deep);}
+details.cerfa-section{
+  background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+  margin-bottom:12px; box-shadow:var(--shadow); overflow:hidden;
+}
+details.cerfa-section[open]{padding-bottom:14px;}
+details.cerfa-section summary{
+  list-style:none; cursor:pointer; padding:14px 16px; font-weight:700; font-size:13.5px;
+  color:var(--navy-deep); display:flex; align-items:center; gap:9px;
+}
+details.cerfa-section summary::-webkit-details-marker{display:none;} /* cache le triangle par défaut de Safari */
+details.cerfa-section summary .num{
+  width:22px; height:22px; border-radius:6px; background:var(--cyan-soft); color:var(--navy);
+  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0;
+}
+details.cerfa-section summary .chev{margin-left:auto; font-size:12px; color:var(--ink-soft); transition:transform .15s;}
+details.cerfa-section[open] summary .chev{transform:rotate(180deg);}
+.cerfa-body{padding:2px 16px 4px;}
+.check-row{display:flex; align-items:flex-start; gap:9px; margin-bottom:10px; font-size:13px;}
+.check-row input[type=checkbox], .check-row input[type=radio]{margin-top:2px; width:16px; height:16px; flex-shrink:0;}
+.check-row label{font-size:13px; color:var(--ink); line-height:1.35;}
+.radio-line{display:flex; flex-wrap:wrap; gap:14px; margin-bottom:10px;}
+.radio-line .opt{display:flex; align-items:center; gap:6px; font-size:12.5px;}
+.row-label{font-size:12px; font-weight:600; color:var(--ink-soft); margin:12px 0 6px;}
+.fuite-row{display:grid; grid-template-columns:24px 1fr auto; gap:8px; align-items:center; margin-bottom:8px;}
+.fuite-row span{font-size:12px; color:var(--ink-soft); font-weight:700;}
+
+/* ------------------------------------------------------------------
+   11. BARRE DU BAS (bouton "Télécharger le PDF")
+   ------------------------------------------------------------------ */
+.bottombar{
+  position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid var(--line);
+  padding:12px 18px; display:none; align-items:center; justify-content:center; gap:12px;
+  box-shadow:0 -6px 18px rgba(23,26,92,0.08); z-index:30;
+}
+.bottombar.visible{display:flex;}
+.btn-primary{
+  background:var(--navy); color:#fff; border:none; font-family:'Inter',sans-serif;
+  font-weight:700; font-size:14.5px; padding:13px 26px; border-radius:8px; cursor:pointer;
+  display:flex; align-items:center; gap:8px; max-width:420px; width:100%; justify-content:center;
+}
+.btn-primary:hover{background:var(--navy-deep);}
+.btn-primary:disabled{opacity:0.6; cursor:wait;}
+.status-msg{font-size:12px; color:var(--ink-soft); text-align:center; margin-top:6px;}
+
+/* ------------------------------------------------------------------
+   12. ÉCRAN DE CONNEXION
+   ------------------------------------------------------------------ */
+.login-wrap{min-height:80vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+.login-card{
+  background:var(--paper); border:1px solid var(--line); border-radius:14px;
+  box-shadow:var(--shadow); padding:28px 24px; width:100%; max-width:340px; text-align:center;
+}
+.login-card .login-logo{width:64px; height:64px; border-radius:50%; margin:0 auto 14px; display:block;}
+.login-card h1{font-size:17px; margin:0 0 18px; color:var(--navy-deep);}
+.login-card .field{text-align:left;}
+.login-error{color:var(--danger); font-size:12.5px; min-height:16px; margin:6px 0 12px;}
+
+/* ------------------------------------------------------------------
+   13. PANNEAU D'ADMINISTRATION
+   ------------------------------------------------------------------ */
+.admin-wrap{max-width:760px; margin:0 auto; padding:20px 18px 40px;}
+.cat-card.admin{background:#fff; border:1.5px solid var(--cyan);}
+.cat-card.admin .cat-icon{background:var(--cyan); color:#fff;}
+.user-row{border:1px solid var(--line); border-radius:10px; padding:13px 14px; margin-bottom:10px; background:#FCFDFF;}
+.user-row-head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:10px;}
+.user-name{font-weight:700; font-size:13.5px; color:var(--ink);}
+.you-tag{font-size:10px; font-weight:600; color:var(--cyan); background:var(--cyan-soft); padding:1px 6px; border-radius:999px; margin-left:6px;}
+.user-email{font-size:11.5px; color:var(--ink-soft);}
+.admin-toggle{display:flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; color:var(--navy); white-space:nowrap;}
+.perm-chips{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;}
+.perm-chip{display:flex; align-items:center; gap:5px; font-size:11.5px; background:var(--canvas); border:1px solid var(--line); border-radius:999px; padding:4px 10px;}
+.adm_delete_btn{background:#FBEAE6; color:var(--danger); border:none; border-radius:7px; font-size:11.5px; font-weight:600; padding:7px 12px; cursor:pointer; width:auto; height:auto;}
+
+.row-actions{display:flex; gap:8px; margin-top:10px;}
+.edit-toggle-btn{
+  background:var(--cyan-soft); color:var(--navy); border:none; border-radius:7px;
+  font-size:11.5px; font-weight:600; padding:7px 12px; cursor:pointer;
+}
+.edit-panel{margin-top:10px; padding-top:12px; border-top:1px dashed var(--line);}
+
+/* Bouton "Effacer tout le formulaire" présent en haut des écrans de rapport et du CERFA */
+.clear-bar{display:flex; justify-content:flex-end; margin-bottom:10px;}
+.clear-btn{
+  background:#FBEAE6; color:var(--danger); border:none; border-radius:7px;
+  font-size:12px; font-weight:600; padding:8px 12px; cursor:pointer;
+}
+
+/* ------------------------------------------------------------------
+   14. HISTORIQUE
+   ------------------------------------------------------------------ */
+.history-wrap{max-width:760px; margin:0 auto; padding:20px 18px 40px;}
+.hist-row{
+  border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:10px;
+  background:#fff; display:flex; justify-content:space-between; align-items:center; gap:10px;
+  box-shadow:var(--shadow);
+}
+.hist-main{flex:1; min-width:0;}
+.hist-badge{
+  font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.3px;
+  padding:3px 8px; border-radius:999px; background:var(--cyan-soft); color:var(--navy);
+  display:inline-block; margin-bottom:5px;
+}
+.hist-title{font-weight:700; font-size:13px; color:var(--ink);}
+.hist-meta{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+.hist-dl-btn{
+  background:var(--navy); color:#fff; border:none; border-radius:7px;
+  font-size:13px; font-weight:600; padding:9px 13px; cursor:pointer; flex-shrink:0;
+}
+
+/* ------------------------------------------------------------------
+   15. BANDEAU DE MISE À JOUR PWA
+   ------------------------------------------------------------------
+   Affiché par js/pwa.js quand une nouvelle version de l'application
+   a été installée en arrière-plan par le service worker et attend
+   qu'on recharge la page pour être appliquée.
+   ------------------------------------------------------------------ */
+.update-banner{
+  position:fixed; top:0; left:0; right:0; z-index:50;
+  background:var(--cyan); color:#04283A; padding:10px 16px;
+  display:flex; align-items:center; justify-content:center; gap:14px;
+  font-size:13px; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.15);
+}
+.update-banner button{
+  background:var(--navy); color:#fff; border:none; border-radius:6px;
+  padding:6px 12px; font-size:12.5px; font-weight:700; cursor:pointer;
+}
+
+::placeholder{color:#A7ABC4;}
