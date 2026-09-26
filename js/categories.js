@@ -1,19 +1,13 @@
 /* ==================================================================
-   FF CLIM — Catégories de rapport & grille de la page d'accueil
+   FF CLIM — Catégories de rapport & menus de l'application
    ==================================================================
-   Ce fichier définit la liste des 4 catégories de rapport "génériques"
-   (Diagnostic, Travaux, Dépannage, Maintenance — celles qui partagent
-   toutes la même structure de formulaire, voir js/reports.js) et
-   construit la grille de cartes affichée sur la page d'accueil, en
-   ne montrant que les catégories auxquelles l'utilisateur connecté a
-   droit (voir categoryAllowed() dans js/auth.js).
-
-   Note : la carte "CERFA" (formulaire officiel, structure différente)
-   et les cartes "Historique"/"Administration" ne sont pas dans
-   REPORT_CATEGORIES : elles sont ajoutées séparément dans
-   renderHomeGrid() ci-dessous, car elles suivent des règles d'accès
-   différentes (CERFA reste une "categoryAllowed", mais Historique est
-   ouvert à tous les connectés, et Administration réservé aux admins).
+   Deux niveaux de menu :
+   - renderHomeGrid()   : la page d'accueil (Rédiger un rapport,
+     Historique, Planning, Album photo, Tutos, Administration).
+   - renderReportsMenu(): le sous-menu "Rédiger un rapport", qui
+     liste les 5 catégories de rapport (Diagnostic, Travaux,
+     Dépannage, Maintenance, CERFA), filtrées selon les droits de
+     l'utilisateur connecté (voir categoryAllowed() dans js/auth.js).
 
    Dépend de : js/icons.js (ICONS), js/auth.js (categoryAllowed,
    currentProfile), js/navigation.js (showScreen, appelé au clic).
@@ -26,9 +20,11 @@ const REPORT_CATEGORIES = [
 ];
 
 /**
- * (Re)construit entièrement la page d'accueil : le message de
- * bienvenue personnalisé, puis la grille de cartes-catégories,
- * filtrée selon les droits de l'utilisateur connecté.
+ * (Re)construit la page d'accueil : le message de bienvenue
+ * personnalisé, puis la grille des 6 entrées de menu principal.
+ * "Rédiger un rapport", "Historique", "Planning", "Album photo" et
+ * "Tutos" sont visibles pour tout utilisateur connecté ;
+ * "Administration" est réservée aux comptes admin.
  * Appelée à chaque connexion (voir onLoggedIn() dans js/auth.js).
  */
 function renderHomeGrid() {
@@ -41,35 +37,38 @@ function renderHomeGrid() {
   const grid = document.getElementById('catGrid');
   let html = '';
 
-  // Les 4 catégories de rapport génériques.
-  REPORT_CATEGORIES.forEach(c => {
-    if (!categoryAllowed(c.key)) return;
-    html += `<button class="cat-card" data-key="${c.key}">
-      <div class="cat-icon">${ICONS[c.icon]}</div>
-      <div class="cat-label">${c.label}</div>
-      <div class="cat-desc">${c.desc}</div>
-    </button>`;
-  });
+  html += `<button class="cat-card" data-key="reports-menu">
+    <div class="cat-icon">${ICONS.doc}</div>
+    <div class="cat-label">Rédiger un rapport</div>
+    <div class="cat-desc">Diagnostic, Travaux, Dépannage, Maintenance, CERFA</div>
+  </button>`;
 
-  // Le CERFA a sa propre carte, mise en avant visuellement (fond bleu marine).
-  if (categoryAllowed('cerfa')) {
-    html += `<button class="cat-card cerfa" data-key="cerfa">
-      <div class="cat-icon">${ICONS.doc}</div>
-      <div class="cat-label">CERFA fluides</div>
-      <div class="cat-desc">Fiche d'intervention officielle (F-Gas)</div>
-    </button>`;
-  }
-
-  // L'historique est visible par tout utilisateur connecté (pas de permission dédiée).
   if (currentProfile) {
     html += `<button class="cat-card" data-key="history">
       <div class="cat-icon">${ICONS.clock}</div>
       <div class="cat-label">Historique</div>
       <div class="cat-desc">Tous les rapports générés</div>
     </button>`;
+
+    html += `<button class="cat-card" data-key="planning">
+      <div class="cat-icon">${ICONS.calendar}</div>
+      <div class="cat-label">Planning</div>
+      <div class="cat-desc">Vos interventions à venir</div>
+    </button>`;
+
+    html += `<button class="cat-card" data-key="album">
+      <div class="cat-icon">${ICONS.image}</div>
+      <div class="cat-label">Album photo</div>
+      <div class="cat-desc">Photos des interventions</div>
+    </button>`;
+
+    html += `<button class="cat-card" data-key="tutos">
+      <div class="cat-icon">${ICONS.book}</div>
+      <div class="cat-label">Tutos</div>
+      <div class="cat-desc">Guides et procédures</div>
+    </button>`;
   }
 
-  // L'administration est réservée aux comptes "admin".
   if (currentProfile && currentProfile.role === 'admin') {
     html += `<button class="cat-card admin" data-key="admin">
       <div class="cat-icon">${ICONS.tools}</div>
@@ -78,12 +77,51 @@ function renderHomeGrid() {
     </button>`;
   }
 
-  if (!html) {
-    html = `<p style="grid-column:1/-1; color:var(--ink-soft); font-size:13px;">Aucune catégorie ne vous a encore été attribuée. Contactez un administrateur.</p>`;
-  }
-
   grid.innerHTML = html;
   grid.querySelectorAll('.cat-card').forEach(btn => {
+    btn.addEventListener('click', () => showScreen(btn.dataset.key));
+  });
+}
+
+/**
+ * (Re)construit le sous-menu "Rédiger un rapport" : une carte par
+ * catégorie de rapport à laquelle l'utilisateur a droit (les 4
+ * catégories génériques + le CERFA). Si aucune catégorie n'est
+ * autorisée, affiche un message plutôt qu'une grille vide.
+ * Appelée à chaque ouverture de cet écran (voir showScreen() dans
+ * js/navigation.js).
+ */
+function renderReportsMenu() {
+  const container = document.getElementById('screen-reports-menu');
+  let cardsHtml = '';
+
+  REPORT_CATEGORIES.forEach(c => {
+    if (!categoryAllowed(c.key)) return;
+    cardsHtml += `<button class="cat-card" data-key="${c.key}">
+      <div class="cat-icon">${ICONS[c.icon]}</div>
+      <div class="cat-label">${c.label}</div>
+      <div class="cat-desc">${c.desc}</div>
+    </button>`;
+  });
+
+  if (categoryAllowed('cerfa')) {
+    cardsHtml += `<button class="cat-card cerfa" data-key="cerfa">
+      <div class="cat-icon">${ICONS.doc}</div>
+      <div class="cat-label">CERFA fluides</div>
+      <div class="cat-desc">Fiche d'intervention officielle (F-Gas)</div>
+    </button>`;
+  }
+
+  if (!cardsHtml) {
+    cardsHtml = `<p style="grid-column:1/-1; color:var(--ink-soft); font-size:13px;">Aucune catégorie ne vous a encore été attribuée. Contactez un administrateur.</p>`;
+  }
+
+  container.innerHTML = `
+    <div class="home-wrap">
+      <div class="cat-grid">${cardsHtml}</div>
+    </div>
+  `;
+  container.querySelectorAll('.cat-card').forEach(btn => {
     btn.addEventListener('click', () => showScreen(btn.dataset.key));
   });
 }

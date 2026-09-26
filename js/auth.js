@@ -101,6 +101,16 @@ async function doLogout() {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-login').classList.add('active');
   currentScreen = 'login';
+
+  // Remet aussi la barre du haut et la barre du bas dans leur état de
+  // départ : sans ça, si on se déconnecte depuis un écran de rapport,
+  // le bouton retour, les onglets Rédiger/Aperçu et le bouton
+  // "Télécharger le PDF" restaient affichés par-dessus l'écran de connexion.
+  document.getElementById('backBtn').style.display = 'none';
+  document.getElementById('brandText').innerHTML = 'FF CLIM<small>Rapports &amp; documents</small>';
+  document.getElementById('topTabs').style.display = 'none';
+  document.getElementById('bottombar').classList.remove('visible');
+  document.body.classList.remove('has-bottombar');
 }
 
 /**
