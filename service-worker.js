@@ -17,7 +17,7 @@
    en cache. Changer ce nom fait automatiquement supprimer l'ancien
    cache (voir l'événement "activate" plus bas).
    ================================================================== */
-const CACHE_NAME = "ffclim-rapports-v4";
+const CACHE_NAME = "ffclim-rapports-v5";
 
 // Fichiers "cœur" de l'application : ceux-ci sont toujours redemandés
 // au réseau en priorité (stratégie "network-first" plus bas), pour

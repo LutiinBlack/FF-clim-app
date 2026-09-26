@@ -28,6 +28,11 @@
 // Rempli au fur et à mesure par initReportModule() plus bas.
 const REPORT_MODULES = {};
 
+// La librairie jsPDF (chargée depuis le CDN dans index.html) s'attache à
+// window.jspdf plutôt qu'à window directement : on récupère ici le
+// constructeur jsPDF pour pouvoir écrire simplement "new jsPDF(...)" plus bas.
+const { jsPDF } = window.jspdf;
+
 /**
  * Construit le HTML complet d'un écran de rapport générique (le
  * formulaire à gauche + l'aperçu "papier" à droite), pour la
