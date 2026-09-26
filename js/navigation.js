@@ -34,6 +34,7 @@ const SCREEN_PARENT = {
   diagnostic: 'reports-menu', travaux: 'reports-menu', depannage: 'reports-menu',
   maintenance: 'reports-menu', cerfa: 'reports-menu',
   'reports-menu': 'home', history: 'home', planning: 'home', album: 'home', tutos: 'home', admin: 'home',
+  'history-list': 'history',
 };
 
 // Mémorise quel écran est actuellement affiché.
@@ -86,14 +87,22 @@ function showScreen(key) {
     document.body.classList.remove('has-bottombar');
     window.scrollTo(0, 0);
     loadAdminUsers();
-  } else if (key === 'history') {
+    } else if (key === 'history') {
     backBtn.style.display = 'flex';
     brandText.innerHTML = 'Historique<small>FF CLIM</small>';
     topTabs.style.display = 'none';
     bottombar.classList.remove('visible');
     document.body.classList.remove('has-bottombar');
     window.scrollTo(0, 0);
-    loadHistory();
+    renderHistoryMenu();
+  } else if (key === 'history-list') {
+    backBtn.style.display = 'flex';
+    brandText.innerHTML = (HISTORY_CATEGORY_LABELS[currentHistoryCategory] || 'Historique') + '<small>FF CLIM</small>';
+    topTabs.style.display = 'none';
+    bottombar.classList.remove('visible');
+    document.body.classList.remove('has-bottombar');
+    window.scrollTo(0, 0);
+    renderHistoryListScreen();
   } else {
     // Écrans de rapport (les 4 catégories génériques + CERFA).
     backBtn.style.display = 'flex';

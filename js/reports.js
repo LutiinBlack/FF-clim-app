@@ -472,7 +472,7 @@ function initReportModule(key) {
       const filename = `Rapport_${CATEGORY_LABELS[key]}_${clientName}${dateName ? '_' + dateName : ''}_FF_CLIM.pdf`;
       const pdfBlob = doc.output('blob');
       downloadBytes(pdfBlob, filename);
-      logHistoryEntry(key, val('f_titre'), val('f_client'), pdfBlob, filename);
+            logHistoryEntry(key, val('f_titre'), val('f_client'), pdfBlob, filename, val('f_intervenant'));
       if (confirm('PDF téléchargé ✓\n\nVoulez-vous vider le formulaire pour une nouvelle saisie ?')) {
         resetForm();
       }

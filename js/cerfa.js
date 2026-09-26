@@ -397,7 +397,7 @@ async function generateCerfaPDF() {
     const ficheNo = (v('cerfa_Fiche_no') || 'sans_numero').replace(/[^a-z0-9]+/gi, '_');
     const filename = `CERFA_15497_${ficheNo}.pdf`;
     downloadBytes(outBytes, filename);
-    logHistoryEntry('cerfa', 'CERFA 15497*04', v('cerfa_Detenteur') || v('cerfa_Operateur') || '', new Blob([outBytes], { type: 'application/pdf' }), filename);
+        logHistoryEntry('cerfa', 'CERFA 15497*04', v('cerfa_Detenteur') || v('cerfa_Operateur') || '', new Blob([outBytes], { type: 'application/pdf' }), filename, v('cerfa_Operateur'));
     if (confirm('PDF téléchargé ✓\n\nVoulez-vous vider le formulaire pour une nouvelle saisie ?')) {
       resetCerfaForm();
     }
